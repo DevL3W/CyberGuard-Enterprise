@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Panel · CyberGuard Enterprise</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="css/corporate.css" rel="stylesheet">
+</head>
+<body>
+<div id="splash" class="splash" role="status" aria-live="polite">
+  <div class="splash-inner">
+    <div class="splash-title">CyberGuard Enterprise</div>
+    <div class="splash-bar"><span></span></div>
+    <div class="splash-text" id="splashText">Cargando…</div>
+  </div>
+</div>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">CyberGuard<small id="companyName"></small></div>
+    <nav id="nav"></nav>
+    <div class="user-box">
+      <div class="d-flex align-items-center gap-2 mb-2">
+        <div id="meAvatar" class="avatar" aria-hidden="true"></div>
+        <div class="min-w-0">
+          <a id="meName" href="#perfil" class="fw-semibold d-block text-white text-decoration-none text-truncate"></a>
+          <div id="meRole" class="role"></div>
+        </div>
+      </div>
+      <button id="logout" class="btn btn-sm btn-outline-light w-100">Cerrar sesión</button>
+    </div>
+  </aside>
+
+  <div class="content">
+    <header class="topbar">
+      <h2 id="viewTitle"></h2>
+      <span id="roleBadge" class="role-pill"></span>
+    </header>
+    <main class="page">
+      <div id="loadError" class="alert alert-danger d-none"></div>
+      <div id="flash" class="alert d-none" role="status"></div>
+      <div id="readOnlyNote" class="alert alert-info d-none">Su sesión es de solo consulta: puede ver la información, pero no modificarla.</div>
+
+      <!-- Resumen (todos los roles) -->
+      <section id="view-resumen" class="view d-none">
+        <div class="row g-3 mb-3" id="resStats"></div>
+        <div class="row g-3 mb-3">
+          <div class="col-lg-4"><div class="panel h-100">
+            <div class="panel-head"><h3>Estado de dispositivos</h3></div>
+            <div class="p-3"><div class="chart-box" id="boxDevices"><canvas id="chDevices"></canvas></div>
+              <p id="emptyDevices" class="text-secondary text-center my-5 d-none">Aún no hay dispositivos registrados.</p></div>
+          </div></div>
+          <div class="col-lg-4"><div class="panel h-100">
+            <div class="panel-head"><h3>Alertas abiertas por severidad</h3></div>
+            <div class="p-3"><div class="chart-box" id="boxSeverity"><canvas id="chSeverity"></canvas></div>
+              <p id="emptySeverity" class="text-secondary text-center my-5 d-none">No hay alertas abiertas.</p></div>
+          </div></div>
+          <div class="col-lg-4"><div class="panel h-100">
+            <div class="panel-head"><h3>Alertas de los últimos 7 días</h3></div>
+            <div class="p-3"><div class="chart-box"><canvas id="chWeek"></canvas></div></div>
+          </div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h3>Alertas recientes</h3><a href="#alertas" class="btn btn-sm btn-outline-secondary">Ver todas</a></div>
+          <div class="table-responsive"><table class="table table-hover align-middle mb-0">
+            <thead><tr><th>Severidad</th><th>Alerta</th><th>Dispositivo</th><th>Estado</th><th>Fecha</th></tr></thead>
+            <tbody id="resRecent"></tbody></table></div>
+        </div>
+      </section>
+
+      <!-- Dispositivos -->
+      <section id="view-dispositivos" class="view d-none">
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Inventario de dispositivos</h3>
+            <div class="toolbar">
+              <input id="devFilter" class="form-control form-control-sm" style="min-width:14rem" placeholder="Buscar por nombre, host, IP o sistema" aria-label="Buscar dispositivos">
+              <select id="devStatusFilter" class="form-select form-select-sm w-auto" aria-label="Filtrar por estado">
+                <option value="">Todos los estados</option>
+                <option value="ONLINE">En línea</option>
+                <option value="OFFLINE">Sin conexión</option>
+                <option value="MANTENIMIENTO">Mantenimiento</option>
+              </select>
+              <button id="devNew" class="btn btn-primary btn-sm d-none">Registrar dispositivo</button>
+            </div>
+          </div>
+          <div class="table-responsive"><table class="table table-hover align-middle mb-0">
+            <thead><tr><th>Nombre</th><th>Host / IP</th><th>Tipo</th><th>Sistema</th><th>Estado</th><th>Última conexión</th><th class="text-end">Acciones</th></tr></thead>
+            <tbody id="devRows"></tbody></table></div>
+        </div>
+      </section>
+
+      <!-- Alertas -->
+      <section id="view-alertas" class="view d-none">
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Alertas de seguridad</h3>
+            <div class="toolbar">
+              <input id="alFilter" class="form-control form-control-sm" style="min-width:12rem" placeholder="Buscar alertas" aria-label="Buscar alertas">
+              <select id="alSevFilter" class="form-select form-select-sm w-auto" aria-label="Filtrar por severidad">
+                <option value="">Toda severidad</option>
+                <option value="CRITICA">Crítica</option><option value="ALTA">Alta</option>
+                <option value="MEDIA">Media</option><option value="BAJA">Baja</option>
+              </select>
+              <select id="alStatusFilter" class="form-select form-select-sm w-auto" aria-label="Filtrar por estado">
+                <option value="">Todos los estados</option>
+                <option value="ABIERTA">Abierta</option><option value="RECONOCIDA">Reconocida</option>
+                <option value="RESUELTA">Resuelta</option>
+              </select>
+              <button id="alNew" class="btn btn-primary btn-sm d-none">Registrar alerta</button>
+            </div>
+          </div>
+          <div class="table-responsive"><table class="table table-hover align-middle mb-0">
+            <thead><tr><th>Severidad</th><th>Alerta</th><th>Dispositivo</th><th>Estado</th><th>Fecha</th><th class="text-end">Acciones</th></tr></thead>
+            <tbody id="alRows"></tbody></table></div>
+        </div>
+      </section>
+
+      <!-- Sesiones (solo administrador) -->
+      <section id="view-sesiones" class="view d-none">
+        <div class="row g-3 mb-3">
+          <div class="col-6 col-md-3"><div class="panel stat"><div class="n" id="statTotal">0</div><div class="l">Sesiones</div></div></div>
+          <div class="col-6 col-md-3"><div class="panel stat ok"><div class="n" id="statActive">0</div><div class="l">Activas</div></div></div>
+          <div class="col-6 col-md-3"><div class="panel stat off"><div class="n" id="statOff">0</div><div class="l">Desactivadas</div></div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Sesiones de la empresa</h3>
+            <div class="toolbar">
+              <input id="filter" class="form-control form-control-sm" placeholder="Buscar por nombre o sesión" aria-label="Buscar sesiones" style="min-width:15rem">
+              <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#userModal">Crear sesión</button>
+            </div>
+          </div>
+          <div class="table-responsive"><table class="table table-hover align-middle mb-0">
+            <thead><tr><th>Nombre</th><th>Sesión</th><th>Rol</th><th>Estado</th><th class="text-end">Acciones</th></tr></thead>
+            <tbody id="rows"></tbody></table></div>
+        </div>
+      </section>
+
+      <!-- Invitaciones y acceso por enlace o QR (solo administrador) -->
+      <section id="view-invitaciones" class="view d-none">
+        <div class="row g-3">
+          <div class="col-lg-5">
+            <div class="panel h-100">
+              <div class="panel-head"><h3>Compartir el acceso a la plataforma</h3></div>
+              <div class="p-3">
+                <label class="form-label small" for="baseUrl">Dirección del servidor</label>
+                <input id="baseUrl" class="form-control form-control-sm" maxlength="200" autocomplete="off" spellcheck="false" aria-describedby="baseHelp">
+                <div id="baseHelp" class="form-text mb-2">Es la dirección que usarán los demás para abrir CyberGuard. Los enlaces y los QR se generan con ella.</div>
+                <div id="baseError" class="alert alert-danger py-1 small d-none" role="alert"></div>
+                <div id="localWarn" class="alert alert-warning py-2 small d-none" role="alert">Esta dirección (<code>localhost</code>) solo funciona en este equipo. Para que otra persona o su teléfono puedan abrirla, escriba aquí la dirección de red del servidor, por ejemplo <code>http://192.168.1.20:8080</code>.</div>
+                <div id="accessBox" class="share-box mt-3" data-filename="cyberguard-acceso.png">
+                  <div class="qr-frame" data-qr></div>
+                  <div>
+                    <label class="form-label small">Enlace de acceso</label>
+                    <div class="input-group input-group-sm">
+                      <input class="form-control" data-link readonly aria-label="Enlace de acceso">
+                      <button type="button" class="btn btn-outline-secondary" data-share-act="copy">Copiar</button>
+                    </div>
+                    <div class="d-flex gap-2 flex-wrap mt-2">
+                      <button type="button" class="btn btn-sm btn-outline-secondary" data-share-act="png">Descargar QR</button>
+                      <button type="button" class="btn btn-sm btn-outline-secondary d-none" data-share-act="share">Compartir…</button>
+                    </div>
+                    <div class="small text-secondary mt-2" data-status aria-live="polite"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-7">
+            <div class="panel h-100">
+              <div class="panel-head">
+                <h3>Invitaciones para unirse a la empresa</h3>
+                <button id="newInvite" class="btn btn-primary btn-sm">Nueva invitación</button>
+              </div>
+              <div class="px-3 pt-3 small text-secondary">Quien abra el enlace o escanee el QR crea su propia sesión con el rol de la invitación. Cada invitación vence y tiene un número máximo de usos; puede revocarla en cualquier momento.</div>
+              <div class="table-responsive mt-2"><table class="table table-hover align-middle mb-0">
+                <thead><tr><th>Rol</th><th>Creada por</th><th>Vence</th><th>Usos</th><th>Estado</th><th class="text-end">Acciones</th></tr></thead>
+                <tbody id="invRows"></tbody></table></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Empresa y licencia (solo administrador) -->
+      <section id="view-empresa" class="view d-none">
+        <div class="panel mb-3">
+          <div class="panel-head"><h3>Nombre de la empresa</h3></div>
+          <form id="empForm" class="p-3 d-flex gap-2 flex-wrap" novalidate>
+            <input id="empName" class="form-control" style="max-width:26rem" maxlength="150" required aria-label="Nombre de la empresa">
+            <button class="btn btn-primary" type="submit">Guardar nombre</button>
+          </form>
+        </div>
+        <div class="panel"><div class="panel-head"><h3>Datos de la empresa y licencia</h3></div>
+          <div class="p-3"><dl id="empresaBox" class="row kv mb-0"></dl></div></div>
+      </section>
+
+      <!-- Vulnerabilidades -->
+      <section id="view-vulnerabilidades" class="view d-none">
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Vulnerabilidades</h3>
+            <div class="toolbar">
+              <input id="vFilter" class="form-control form-control-sm" style="min-width:12rem" placeholder="Buscar por título, CVE o equipo" aria-label="Buscar vulnerabilidades">
+              <select id="vSevFilter" class="form-select form-select-sm w-auto" aria-label="Filtrar por severidad">
+                <option value="">Toda severidad</option><option value="CRITICA">Crítica</option><option value="ALTA">Alta</option><option value="MEDIA">Media</option><option value="BAJA">Baja</option>
+              </select>
+              <select id="vStatusFilter" class="form-select form-select-sm w-auto" aria-label="Filtrar por estado">
+                <option value="">Todos los estados</option><option value="ABIERTA">Abierta</option><option value="EN_PROCESO">En proceso</option><option value="CORREGIDA">Corregida</option>
+              </select>
+              <button id="vNew" class="btn btn-primary btn-sm d-none">Registrar vulnerabilidad</button>
+            </div>
+          </div>
+          <div class="table-responsive"><table class="table table-hover align-middle mb-0">
+            <thead><tr><th>Severidad</th><th>Vulnerabilidad</th><th>Dispositivo</th><th>Estado</th><th>Fecha</th><th class="text-end">Acciones</th></tr></thead>
+            <tbody id="vRows"></tbody></table></div>
+        </div>
+      </section>
+
+      <!-- Incidentes -->
+      <section id="view-incidentes" class="view d-none">
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Incidentes de seguridad</h3>
+            <div class="toolbar">
+              <input id="incFilter" class="form-control form-control-sm" style="min-width:12rem" placeholder="Buscar incidentes" aria-label="Buscar incidentes">
+              <select id="incSevFilter" class="form-select form-select-sm w-auto" aria-label="Filtrar por severidad">
+                <option value="">Toda severidad</option><option value="CRITICA">Crítica</option><option value="ALTA">Alta</option><option value="MEDIA">Media</option><option value="BAJA">Baja</option>
+              </select>
+              <select id="incStatusFilter" class="form-select form-select-sm w-auto" aria-label="Filtrar por estado">
+                <option value="">Todos los estados</option><option value="ABIERTO">Abierto</option><option value="EN_INVESTIGACION">En investigación</option><option value="CONTENIDO">Contenido</option><option value="CERRADO">Cerrado</option>
+              </select>
+              <button id="incNew" class="btn btn-primary btn-sm d-none">Registrar incidente</button>
+            </div>
+          </div>
+          <div class="table-responsive"><table class="table table-hover align-middle mb-0">
+            <thead><tr><th>Severidad</th><th>Incidente</th><th>Dispositivo</th><th>Estado</th><th>Responsable</th><th>Fecha</th></tr></thead>
+            <tbody id="incRows"></tbody></table></div>
+        </div>
+      </section>
+
+      <!-- Informes -->
+      <section id="view-informes" class="view d-none">
+        <div class="panel mb-3">
+          <div class="panel-head">
+            <h3>Descargar informes (CSV, se abre en Excel)</h3>
+            <div class="toolbar no-print">
+              <button class="btn btn-outline-secondary btn-sm" data-export="devices">Dispositivos</button>
+              <button class="btn btn-outline-secondary btn-sm" data-export="alerts">Alertas</button>
+              <button class="btn btn-outline-secondary btn-sm" data-export="vulnerabilities">Vulnerabilidades</button>
+              <button class="btn btn-outline-secondary btn-sm" data-export="incidents">Incidentes</button>
+              <button id="repPrint" class="btn btn-primary btn-sm">Imprimir resumen</button>
+            </div>
+          </div>
+          <div class="p-3 text-secondary small" id="repMeta"></div>
+        </div>
+        <div class="row g-3" id="repBody"></div>
+      </section>
+
+      <!-- Mi perfil (todos los roles) -->
+      <section id="view-perfil" class="view d-none">
+        <div class="row g-3">
+          <div class="col-lg-6">
+            <div class="panel mb-3"><div class="p-3" id="pfHeader"></div></div>
+            <div class="panel mb-3">
+              <div class="panel-head"><h3>Mis datos</h3></div>
+              <form id="pfForm" class="p-3" novalidate>
+                <div id="pfError" class="alert alert-danger py-2 d-none"></div>
+                <div class="mb-3"><label class="form-label" for="pfName">Nombre completo</label>
+                  <input id="pfName" class="form-control" maxlength="150" autocomplete="name" required></div>
+                <div class="row g-3 mb-3">
+                  <div class="col-sm-6"><label class="form-label" for="pfEmail">Correo electrónico</label>
+                    <input id="pfEmail" type="email" class="form-control" maxlength="150" autocomplete="email"></div>
+                  <div class="col-sm-6"><label class="form-label" for="pfJob">Cargo</label>
+                    <input id="pfJob" class="form-control" maxlength="100"></div>
+                </div>
+                <button class="btn btn-primary" type="submit">Guardar cambios</button>
+              </form>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><h3>Cambiar contraseña</h3></div>
+              <form id="pwForm" class="p-3" novalidate>
+                <div id="pwError" class="alert alert-danger py-2 d-none"></div>
+                <div class="mb-3"><label class="form-label" for="pwCurrent">Contraseña actual</label>
+                  <input id="pwCurrent" type="password" class="form-control" maxlength="128" autocomplete="current-password" required></div>
+                <div class="row g-3 mb-2">
+                  <div class="col-sm-6"><label class="form-label" for="pwNew">Contraseña nueva (mínimo 10)</label>
+                    <input id="pwNew" type="password" class="form-control" maxlength="128" autocomplete="new-password" required></div>
+                  <div class="col-sm-6"><label class="form-label" for="pwNew2">Repetir contraseña nueva</label>
+                    <input id="pwNew2" type="password" class="form-control" maxlength="128" autocomplete="new-password" required></div>
+                </div>
+                <p class="small text-secondary">Al cambiarla, las demás sesiones abiertas con su cuenta se cerrarán.</p>
+                <button class="btn btn-primary" type="submit">Cambiar contraseña</button>
+              </form>
+            </div>
+          </div>
+          <div class="col-lg-6">
+            <div class="panel mb-3">
+              <div class="panel-head"><h3>Incidentes asignados a mí</h3><a href="#incidentes" class="btn btn-sm btn-outline-secondary">Ver incidentes</a></div>
+              <div class="p-3" id="pfIncidents"></div>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><h3>Mi actividad reciente</h3></div>
+              <div class="p-3" id="pfActivity"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Auditoría (solo administrador) -->
+      <section id="view-auditoria" class="view d-none">
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Historial de auditoría <span class="text-secondary fw-normal small">(últimos 200 movimientos)</span></h3>
+            <div class="toolbar">
+              <input id="audFilter" class="form-control form-control-sm" style="min-width:14rem" placeholder="Buscar por sesión o detalle" aria-label="Buscar en la auditoría">
+              <select id="audAction" class="form-select form-select-sm w-auto" aria-label="Filtrar por acción">
+                <option value="">Todas las acciones</option><option value="INICIO_SESION">Inicio de sesión</option>
+                <option value="CREAR">Crear</option><option value="MODIFICAR">Modificar</option><option value="ELIMINAR">Eliminar</option>
+                <option value="CLAVE_AGENTE">Clave de agente</option><option value="CAMBIO_CLAVE">Cambio de contraseña</option><option value="DESCONEXION">Desconexión</option><option value="REGISTRO">Registro</option>
+              </select>
+            </div>
+          </div>
+          <div class="table-responsive"><table class="table table-hover align-middle mb-0">
+            <thead><tr><th>Fecha</th><th>Sesión</th><th>Acción</th><th>Elemento</th><th>Detalle</th></tr></thead>
+            <tbody id="audRows"></tbody></table></div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<!-- Modal dispositivo -->
+<div class="modal fade" id="deviceModal" tabindex="-1" aria-labelledby="deviceModalTitle" aria-hidden="true">
+  <div class="modal-dialog"><form id="deviceForm" class="modal-content" novalidate>
+    <div class="modal-header"><h3 class="modal-title fs-5" id="deviceModalTitle">Registrar dispositivo</h3>
+      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button></div>
+    <div class="modal-body">
+      <div id="deviceError" class="alert alert-danger py-2 d-none"></div>
+      <input type="hidden" id="dId">
+      <div class="mb-3"><label class="form-label" for="dName">Nombre</label><input id="dName" class="form-control" maxlength="100" required></div>
+      <div class="row g-3 mb-3">
+        <div class="col-sm-6"><label class="form-label" for="dHostname">Nombre de host</label><input id="dHostname" class="form-control" maxlength="150"></div>
+        <div class="col-sm-6"><label class="form-label" for="dIp">Dirección IP</label><input id="dIp" class="form-control" maxlength="45" placeholder="192.168.1.10"></div>
+      </div>
+      <div class="row g-3 mb-3">
+        <div class="col-sm-6"><label class="form-label" for="dType">Tipo</label>
+          <select id="dType" class="form-select"><option value="SERVIDOR">Servidor</option><option value="COMPUTADOR">Computador</option><option value="RED">Equipo de red</option><option value="OTRO">Otro</option></select></div>
+        <div class="col-sm-6"><label class="form-label" for="dStatus">Estado</label>
+          <select id="dStatus" class="form-select"><option value="ONLINE">En línea</option><option value="OFFLINE">Sin conexión</option><option value="MANTENIMIENTO">Mantenimiento</option></select></div>
+      </div>
+      <div class="mb-1"><label class="form-label" for="dOs">Sistema operativo</label><input id="dOs" class="form-control" maxlength="100" placeholder="Windows 11, Ubuntu 24.04…"></div>
+    </div>
+    <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+      <button type="submit" class="btn btn-primary">Guardar</button></div>
+  </form></div>
+</div>
+
+<!-- Modal alerta -->
+<div class="modal fade" id="alertModal" tabindex="-1" aria-labelledby="alertModalTitle" aria-hidden="true">
+  <div class="modal-dialog"><form id="alertForm" class="modal-content" novalidate>
+    <div class="modal-header"><h3 class="modal-title fs-5" id="alertModalTitle">Registrar alerta</h3>
+      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button></div>
+    <div class="modal-body">
+      <div id="alertError" class="alert alert-danger py-2 d-none"></div>
+      <div class="mb-3"><label class="form-label" for="aTitle">Título</label><input id="aTitle" class="form-control" maxlength="200" required></div>
+      <div class="mb-3"><label class="form-label" for="aDescription">Descripción</label><textarea id="aDescription" class="form-control" rows="3" maxlength="2000"></textarea></div>
+      <div class="row g-3 mb-1">
+        <div class="col-sm-6"><label class="form-label" for="aSeverity">Severidad</label>
+          <select id="aSeverity" class="form-select"><option value="BAJA">Baja</option><option value="MEDIA" selected>Media</option><option value="ALTA">Alta</option><option value="CRITICA">Crítica</option></select></div>
+        <div class="col-sm-6"><label class="form-label" for="aDevice">Dispositivo</label>
+          <select id="aDevice" class="form-select"><option value="">Sin dispositivo</option></select></div>
+      </div>
+    </div>
+    <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+      <button type="submit" class="btn btn-primary">Registrar alerta</button></div>
+  </form></div>
+</div>
+
+<!-- Modal sesión -->
+<div class="modal fade" id="userModal" tabindex="-1" aria-labelledby="userModalTitle" aria-hidden="true">
+  <div class="modal-dialog"><form id="userForm" class="modal-content" novalidate>
+    <div class="modal-header"><h3 class="modal-title fs-5" id="userModalTitle">Crear sesión</h3>
+      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button></div>
+    <div class="modal-body">
+      <div id="formError" class="alert alert-danger py-2 d-none"></div>
+      <div class="mb-3"><label class="form-label" for="fFullName">Nombre completo</label><input id="fFullName" class="form-control" maxlength="150" required></div>
+      <div class="mb-3"><label class="form-label" for="fUsername">Nombre de la sesión</label><input id="fUsername" class="form-control" maxlength="50" autocomplete="off" required></div>
+      <div class="mb-3"><label class="form-label" for="fPassword">Contraseña (mínimo 10 caracteres)</label><input id="fPassword" type="password" class="form-control" maxlength="128" autocomplete="new-password" required></div>
+      <div class="mb-1"><label class="form-label" for="fRole">Rol</label>
+        <select id="fRole" class="form-select">
+          <option value="LECTOR">Solo consulta: ve la información</option>
+          <option value="ANALISTA">Analista: registra y gestiona dispositivos y alertas</option>
+          <option value="ADMIN">Administrador: control total</option>
+        </select></div>
+    </div>
+    <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+      <button type="submit" class="btn btn-primary">Crear sesión</button></div>
+  </form></div>
+</div>
+
+<!-- Modal invitación -->
+<div class="modal fade" id="inviteModal" tabindex="-1" aria-labelledby="inviteModalTitle" aria-hidden="true">
+  <div class="modal-dialog modal-lg"><div class="modal-content">
+    <div class="modal-header"><h3 class="modal-title fs-5" id="inviteModalTitle">Nueva invitación</h3>
+      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button></div>
+    <form id="inviteForm" novalidate>
+      <div class="modal-body">
+        <div id="inviteError" class="alert alert-danger py-2 d-none"></div>
+        <div class="row g-3">
+          <div class="col-md-6"><label class="form-label" for="iRole">Rol de quien se una</label>
+            <select id="iRole" class="form-select">
+              <option value="LECTOR">Solo consulta: ve la información</option>
+              <option value="ANALISTA">Analista: registra y gestiona dispositivos y alertas</option>
+            </select></div>
+          <div class="col-md-3"><label class="form-label" for="iDays">Válida por</label>
+            <select id="iDays" class="form-select">
+              <option value="1">1 día</option><option value="7" selected>7 días</option><option value="30">30 días</option>
+            </select></div>
+          <div class="col-md-3"><label class="form-label" for="iUses">Personas (máx.)</label>
+            <input id="iUses" type="number" min="1" max="100" value="5" class="form-control"></div>
+        </div>
+        <p class="small text-secondary mt-3 mb-0">Por seguridad, una invitación no puede dar el rol de administrador. Para otro administrador cree la sesión desde Sesiones.</p>
+      </div>
+      <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Crear invitación</button></div>
+    </form>
+    <div id="inviteResult" class="d-none">
+      <div class="modal-body">
+        <div class="alert alert-success py-2">Invitación creada. <strong>Copie el enlace o descargue el QR ahora:</strong> por seguridad no se puede volver a mostrar. Si lo pierde, revóquela y cree otra.</div>
+        <p id="inviteSummary" class="small text-secondary"></p>
+        <div id="inviteBox" class="share-box" data-filename="cyberguard-invitacion.png">
+          <div class="qr-frame" data-qr></div>
+          <div>
+            <label class="form-label small">Enlace de invitación</label>
+            <div class="input-group input-group-sm">
+              <input class="form-control" data-link readonly aria-label="Enlace de invitación">
+              <button type="button" class="btn btn-outline-secondary" data-share-act="copy">Copiar</button>
+            </div>
+            <div class="d-flex gap-2 flex-wrap mt-2">
+              <button type="button" class="btn btn-sm btn-outline-secondary" data-share-act="png">Descargar QR</button>
+              <button type="button" class="btn btn-sm btn-outline-secondary d-none" data-share-act="share">Compartir…</button>
+            </div>
+            <div class="small text-secondary mt-2" data-status aria-live="polite"></div>
+            <div id="inviteLocalWarn" class="alert alert-warning py-2 small mt-3 mb-0 d-none">La dirección del servidor es <code>localhost</code>: este enlace solo abrirá en este equipo. Cámbiela en el panel «Dirección del servidor» y el enlace y el QR se actualizarán.</div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer"><button type="button" class="btn btn-primary" data-bs-dismiss="modal">Listo</button></div>
+    </div>
+  </div></div>
+</div>
+
+<!-- Modal restablecer contraseña -->
+<div class="modal fade" id="resetModal" tabindex="-1" aria-labelledby="resetModalTitle" aria-hidden="true">
+  <div class="modal-dialog"><form id="resetForm" class="modal-content" novalidate>
+    <div class="modal-header"><h3 class="modal-title fs-5" id="resetModalTitle">Restablecer contraseña</h3>
+      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button></div>
+    <div class="modal-body">
+      <div id="rpError" class="alert alert-danger py-2 d-none"></div>
+      <input type="hidden" id="rpId">
+      <p>Nueva contraseña para la sesión <strong id="rpUser"></strong>.</p>
+      <label class="form-label" for="rpPassword">Contraseña nueva (mínimo 10 caracteres)</label>
+      <input id="rpPassword" type="password" class="form-control" maxlength="128" autocomplete="new-password" required>
+      <p class="small text-secondary mt-2 mb-0">Sus sesiones abiertas se cerrarán y deberá entrar con esta contraseña. Entréguesela por un canal seguro.</p>
+    </div>
+    <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+      <button type="submit" class="btn btn-primary">Restablecer</button></div>
+  </form></div>
+</div>
+
+<!-- Modal vulnerabilidad -->
+<div class="modal fade" id="vulnModal" tabindex="-1" aria-labelledby="vulnModalTitle" aria-hidden="true">
+  <div class="modal-dialog"><form id="vulnForm" class="modal-content" novalidate>
+    <div class="modal-header"><h3 class="modal-title fs-5" id="vulnModalTitle">Registrar vulnerabilidad</h3>
+      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button></div>
+    <div class="modal-body">
+      <div id="vulnError" class="alert alert-danger py-2 d-none"></div>
+      <div class="mb-3"><label class="form-label" for="vTitle">Título</label><input id="vTitle" class="form-control" maxlength="200" required></div>
+      <div class="mb-3"><label class="form-label" for="vCve">CVE (opcional)</label><input id="vCve" class="form-control" maxlength="30" placeholder="CVE-2024-12345"></div>
+      <div class="mb-3"><label class="form-label" for="vDescription">Descripción</label><textarea id="vDescription" class="form-control" rows="3" maxlength="2000"></textarea></div>
+      <div class="row g-3 mb-1">
+        <div class="col-sm-6"><label class="form-label" for="vSeverity">Severidad</label>
+          <select id="vSeverity" class="form-select"><option value="BAJA">Baja</option><option value="MEDIA" selected>Media</option><option value="ALTA">Alta</option><option value="CRITICA">Crítica</option></select></div>
+        <div class="col-sm-6"><label class="form-label" for="vDevice">Dispositivo</label>
+          <select id="vDevice" class="form-select"><option value="">Sin dispositivo</option></select></div>
+      </div>
+    </div>
+    <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+      <button type="submit" class="btn btn-primary">Registrar</button></div>
+  </form></div>
+</div>
+
+<!-- Modal incidente -->
+<div class="modal fade" id="incModal" tabindex="-1" aria-labelledby="incModalTitle" aria-hidden="true">
+  <div class="modal-dialog"><form id="incForm" class="modal-content" novalidate>
+    <div class="modal-header"><h3 class="modal-title fs-5" id="incModalTitle">Registrar incidente</h3>
+      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button></div>
+    <div class="modal-body">
+      <div id="incError" class="alert alert-danger py-2 d-none"></div>
+      <div class="mb-3"><label class="form-label" for="iTitle">Título</label><input id="iTitle" class="form-control" maxlength="200" required></div>
+      <div class="mb-3"><label class="form-label" for="iDescription">Descripción</label><textarea id="iDescription" class="form-control" rows="3" maxlength="2000"></textarea></div>
+      <div class="row g-3 mb-3">
+        <div class="col-sm-6"><label class="form-label" for="iSeverity">Severidad</label>
+          <select id="iSeverity" class="form-select"><option value="BAJA">Baja</option><option value="MEDIA" selected>Media</option><option value="ALTA">Alta</option><option value="CRITICA">Crítica</option></select></div>
+        <div class="col-sm-6"><label class="form-label" for="iDevice">Dispositivo</label>
+          <select id="iDevice" class="form-select"><option value="">Sin dispositivo</option></select></div>
+      </div>
+      <div class="mb-1"><label class="form-label" for="iAssignee">Responsable</label>
+        <select id="iAssignee" class="form-select"><option value="">Sin asignar</option></select></div>
+    </div>
+    <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+      <button type="submit" class="btn btn-primary">Registrar incidente</button></div>
+  </form></div>
+</div>
+
+<!-- Modal clave del agente -->
+<div class="modal fade" id="agentModal" tabindex="-1" aria-labelledby="agentModalTitle" aria-hidden="true">
+  <div class="modal-dialog modal-lg"><div class="modal-content">
+    <div class="modal-header"><h3 class="modal-title fs-5" id="agentModalTitle">Agente de <span id="agDevice"></span></h3>
+      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button></div>
+    <div class="modal-body">
+      <div class="alert alert-warning py-2">Copie la clave ahora: <strong>no se volverá a mostrar</strong>. Si la pierde, genere una nueva.</div>
+      <label class="form-label" for="agKey">Clave del agente</label>
+      <div class="input-group mb-3"><input id="agKey" class="form-control license-key" readonly>
+        <button class="btn btn-outline-secondary" type="button" data-copy-from="agKey">Copiar</button></div>
+      <label class="form-label" for="agCmd">Comando para ejecutar el agente (desde la carpeta <code>agente</code>, en el equipo a monitorear)</label>
+      <div class="input-group"><textarea id="agCmd" class="form-control license-key" rows="3" readonly></textarea>
+        <button class="btn btn-outline-secondary" type="button" data-copy-from="agCmd">Copiar</button></div>
+      <p class="small text-secondary mt-3 mb-0">El agente solo envía el nombre del equipo, su IP, su sistema operativo y avisos de poco espacio en disco. No lee archivos ni ejecuta comandos.</p>
+    </div>
+    <div class="modal-footer"><button type="button" class="btn btn-primary" data-bs-dismiss="modal">Listo</button></div>
+  </div></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+<script src="js/vista-resumen.js"></script>
+<script src="js/vista-dispositivos.js"></script>
+<script src="js/vista-alertas.js"></script>
+<script src="js/vista-vulnerabilidades.js"></script>
+<script src="js/vista-incidentes.js"></script>
+<script src="js/vista-informes.js"></script>
+<script src="js/vista-sesiones.js"></script>
+<script src="js/qr.js"></script>
+<script src="js/vista-invitaciones.js"></script>
+<script src="js/vista-auditoria.js"></script>
+<script src="js/vista-empresa.js"></script>
+<script src="js/vista-perfil.js"></script>
+<script src="js/dashboard.js"></script>
+</body>
+</html>
