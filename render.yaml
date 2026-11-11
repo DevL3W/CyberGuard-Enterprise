@@ -1,0 +1,36 @@
+# Despliegue en Render: base de datos PostgreSQL + servidor CyberGuard (Docker)
+databases:
+  - name: cyberguard-db
+    databaseName: cyberguard
+    user: cyberguard
+    plan: free
+
+services:
+  - type: web
+    name: cyberguard
+    runtime: docker
+    plan: free
+    healthCheckPath: /login.html
+    envVars:
+      - key: PORT
+        value: "8080"
+      - key: CYBERGUARD_DB_HOST
+        fromDatabase: { name: cyberguard-db, property: host }
+      - key: CYBERGUARD_DB_PORT
+        fromDatabase: { name: cyberguard-db, property: port }
+      - key: CYBERGUARD_DB_NAME
+        fromDatabase: { name: cyberguard-db, property: database }
+      - key: CYBERGUARD_DB_USER
+        fromDatabase: { name: cyberguard-db, property: user }
+      - key: CYBERGUARD_DB_PASSWORD
+        fromDatabase: { name: cyberguard-db, property: password }
+      - key: CYBERGUARD_JWT_SECRET
+        generateValue: true
+      - key: CYBERGUARD_ADMIN_USER
+        value: admin
+      - key: CYBERGUARD_ADMIN_PASSWORD
+        sync: false   # Render le pedirá que la escriba al crear el servicio
+      - key: CYBERGUARD_COMPANY_NAME
+        value: Empresa Demo
+      - key: CYBERGUARD_GUEST_ENABLED
+        value: "true"

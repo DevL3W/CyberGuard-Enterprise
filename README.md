@@ -44,3 +44,10 @@ La pantalla de inicio de sesión incluye el botón **Entrar solo para ver**. Ent
 - Cambiar el nombre de la cuenta: `CYBERGUARD_GUEST_USER`.
 - Los invitados ven los datos de la primera empresa: úsese en demostraciones o con datos que se puedan mostrar.
 - Foto de la pantalla de inicio: guarde su imagen como `src/main/resources/static/img/login.jpg` (si no existe, se usa un fondo por defecto).
+
+## Despliegue en Render (en línea)
+
+1. Suba esta carpeta completa a un repositorio de GitHub (con GitHub Desktop o `git push`; la subida web limita a 100 archivos).
+2. En Render: **New → Blueprint**, elija el repositorio y escriba la contraseña del administrador (`CYBERGUARD_ADMIN_PASSWORD`) cuando la pida.
+3. Al terminar, abra `https://SU-SERVICIO.onrender.com/login.html`. El servidor ya incluye la web, así que Vercel es opcional.
+4. Variables: `CYBERGUARD_DB_HOST/PORT/NAME/USER/PASSWORD` (se rellenan solas), `CYBERGUARD_JWT_SECRET` (se genera), `CYBERGUARD_GUEST_ENABLED`.
